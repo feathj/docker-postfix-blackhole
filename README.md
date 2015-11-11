@@ -3,6 +3,8 @@ Postfix Blackhole
 A simple postfix blackhole image.  Useful for integration testing applications
 without actually sending smtp messages.
 
+Includes optional support for TLS via STARTTLS using a self signed certificate.
+
 Running
 ========
 `$ docker run -it -p 25:25 feathj/postfix-blackhole`
