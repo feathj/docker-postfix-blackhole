@@ -1,28 +1,21 @@
 #!/bin/bash
 
-maildomain="mail.blackhole.local"
-user="user"
-pwd="password"
-
-postconf -e myhostname=$maildomain
-
 # supervisor config
 cat > /etc/supervisor/conf.d/supervisord.conf <<EOF
 [supervisord]
 nodaemon=true
-[program:postfix]
-command=/opt/postfix.sh
-[program:rsyslog]
-command=/usr/sbin/rsyslogd -n -c3
-EOF
+loglevel=critical
 
-# postfix script for supervisor
-cat >> /opt/postfix.sh <<EOF
-#!/bin/bash
-service postfix start
-tail -f /var/log/mail.log
+[program:dovecot]
+command=/usr/sbin/dovecot -c /etc/dovecot/dovecot.conf -F
+
+[program:rsyslog]
+command=/usr/sbin/rsyslogd
+
+[program:postfix]
+directory=/etc/postfix
+command=/usr/sbin/postfix -c /etc/postfix start
 EOF
-chmod +x /opt/postfix.sh
 
 # generate self signed certificate and enable TLS
 mkdir -p /etc/postfix/certs
@@ -43,12 +36,32 @@ postconf -e smtpd_use_tls=yes
 postconf -e smtpd_tls_cert_file="/etc/postfix/certs/server.crt"
 postconf -e smtpd_tls_key_file="/etc/postfix/certs/server.key"
 
-# sasl login for primary user
-# postconf -e smtpd_sasl_auth_enable=yes
-# postconf -e smtpd_sasl_type=dovecot
-# postconf -e smtpd_sasl_path=private/auth
-# postconf -e smtpd_sasl_security_options=noanonymous
-# postconf -e smtpd_recipient_restrictions=permit_sasl_authenticated,reject_unauth_destination
+# sasl login using dovecot
+ postconf -e smtpd_sasl_auth_enable=yes
+ postconf -e smtpd_sasl_type=dovecot
+ postconf -e smtpd_sasl_path=private/auth
+ postconf -e smtpd_sasl_security_options=noanonymous
+ postconf -e smtpd_recipient_restrictions=permit_sasl_authenticated,reject_unauth_destination
+cat > /etc/dovecot/dovecot.conf <<EOF
+disable_plaintext_auth = yes
+mail_privileged_group = mail
+mail_location = mbox:~/mail:INBOX=/var/mail/%u
+userdb {
+  driver = static
+  args = uid=500 gid=500 home=/home/%u
+}
+passdb {
+  driver = static
+  args = password=password
+}
+service auth {
+  unix_listener /var/spool/postfix/private/auth {
+    group = postfix
+    mode = 0660
+    user = postfix
+  }
+}
+EOF
 
 # config postfix for blackhole
 postconf -e relayhost=
