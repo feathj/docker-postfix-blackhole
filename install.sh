@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# supervisor config
+### Supervisor ########################################################
 cat > /etc/supervisor/conf.d/supervisord.conf <<EOF
 [supervisord]
 nodaemon=true
@@ -15,9 +15,17 @@ command=/usr/sbin/rsyslogd
 [program:postfix]
 directory=/etc/postfix
 command=/usr/sbin/postfix -c /etc/postfix start
+
+[program:log]
+command=tail -f /var/log/mail.log
+redirect_stderr=true
+stdout_logfile=/dev/stdout
+stdout_logfile_maxbytes=0
+auto_start=true
+autorestart=true
 EOF
 
-# generate self signed certificate and enable TLS
+### TLS ###############################################################
 mkdir -p /etc/postfix/certs
 openssl req \
   -subj '/CN=mail.blackhole.local/O=Postfix Blackhole/C=US' \
@@ -36,7 +44,7 @@ postconf -e smtpd_use_tls=yes
 postconf -e smtpd_tls_cert_file="/etc/postfix/certs/server.crt"
 postconf -e smtpd_tls_key_file="/etc/postfix/certs/server.key"
 
-# sasl login using dovecot
+## SASL Login #########################################################
  postconf -e smtpd_sasl_auth_enable=yes
  postconf -e smtpd_sasl_type=dovecot
  postconf -e smtpd_sasl_path=private/auth
@@ -64,12 +72,12 @@ service auth {
 EOF
 
 # config postfix for blackhole
-postconf -e relayhost=
-postconf -e relay_transport=relay
-postconf -e relay_domains=static:ALL
-postconf -e smtpd_end_of_data_restrictions="check_client_access static:discard"
-postconf -e smtp_dns_support_level=disabled
-postconf -e disable_dns_lookups=yes
-postconf -e in_flow_delay=0
-postconf -e smtpd_error_sleep_time=0
-postconf -e smtpd_client_connection_count_limit=0
+# postconf -e relayhost=
+# postconf -e relay_transport=relay
+# postconf -e relay_domains=static:ALL
+# postconf -e smtpd_end_of_data_restrictions="check_client_access static:discard"
+# postconf -e smtp_dns_support_level=disabled
+# postconf -e disable_dns_lookups=yes
+# postconf -e in_flow_delay=0
+# postconf -e smtpd_error_sleep_time=0
+# postconf -e smtpd_client_connection_count_limit=0
