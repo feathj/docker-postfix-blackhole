@@ -5,7 +5,7 @@ ENV DEBIAN_FRONTEND noninteractive
 
 # install and cleanup
 RUN apt-get update \
-  && apt-get install -y supervisor dovecot-common postfix \
+  && apt-get install -y supervisor dovecot-common postfix nginx nginx-extras\
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
@@ -15,3 +15,5 @@ RUN /install.sh \
   && rm /install.sh
 
 CMD /usr/bin/supervisord -c /etc/supervisor/supervisord.conf
+VOLUME /mail
+EXPOSE 25 80

@@ -1,17 +1,21 @@
 Postfix Blackhole
 ==================
-A simple postfix blackhole image.  Useful for integration testing applications
-without actually sending smtp messages.
+Postfix blackhole docker image.  Useful for for integration testing applications that send messages via SMTP.  Messages sent to blackhole will not actually be delivered, but recorded to filesystem for verification.
 
-Includes optional support for TLS via STARTTLS using a self signed certificate.
-Also includes login support via dovecot for any user, password is: `password`.
+Features
+---------
+* Listening service is actual configured instance of postfix which provides accurate testing of application SMTP machinery
+* TLS support via STARTTLS using a self signed certificate
+* Login support via dovecot for any user, password is `password`
+* Emails are written to exposed `/mail` volume
+* Embedded nginx server with fancyindex enabled for browsing submitted emails
 
 Running
-========
-`$ docker run -it -p 25:25 feathj/postfix-blackhole`
+-------
+`$ docker run -it -p 25:25 -p 80:80 feathj/postfix-blackhole`
 
 Note that `VIRTUAL_HOST` environment variable can be added if run with dinghy client
-`$ docker run -it -p 25:25 -e VIRTUAL_HOST=postfix-blackhole.docker feathj/postfix-blackhole`
+`$ docker run -it -p 25:25 -p 80:80 -e VIRTUAL_HOST=postfix-blackhole.docker feathj/postfix-blackhole`
 
 Or from docker-compose.yml:
 ```
@@ -19,11 +23,12 @@ postfix:
   image: feathj/postfix-blackhole
   ports:
     - "25:25"
+    - "80:80"
   environment:
     VIRTUAL_HOST: "postfix.docker"
 ```
 
-Inspired heavily by
-===================
+Related Repos
+-------------
 [docker-postfix](https://github.com/catatnight/docker-postfix)  
 [smtpblackhole](https://github.com/simap/smtpblackhole)

@@ -1,5 +1,14 @@
 #!/bin/bash
 
+## Postfix pipe to disk ###############################################
+postconf -F '*/*/chroot = n'
+mkdir -p /mail
+chmod 777 /mail
+echo 'fs_mail unix - n n - - pipe flags=F user=www-data argv=tee /mail/${queue_id}_${recipient}.txt' \
+>> /etc/postfix/master.cf
+postconf -e default_transport=fs_mail
+postconf -e smtpd_peername_lookup=no
+
 ### Supervisor ########################################################
 cat > /etc/supervisor/conf.d/supervisord.conf <<EOF
 [supervisord]
@@ -11,6 +20,9 @@ command=/usr/sbin/dovecot -c /etc/dovecot/dovecot.conf -F
 
 [program:rsyslog]
 command=/usr/sbin/rsyslogd
+
+[program:nginx]
+command=/usr/sbin/nginx -g "daemon off";
 
 [program:postfix]
 directory=/etc/postfix
@@ -45,15 +57,14 @@ postconf -e smtpd_tls_cert_file="/etc/postfix/certs/server.crt"
 postconf -e smtpd_tls_key_file="/etc/postfix/certs/server.key"
 
 ## SASL Login #########################################################
- postconf -e smtpd_sasl_auth_enable=yes
- postconf -e smtpd_sasl_type=dovecot
- postconf -e smtpd_sasl_path=private/auth
- postconf -e smtpd_sasl_security_options=noanonymous
- postconf -e smtpd_recipient_restrictions=permit_sasl_authenticated,reject_unauth_destination
+postconf -e smtpd_sasl_auth_enable=yes
+postconf -e smtpd_sasl_type=dovecot
+postconf -e smtpd_sasl_path=private/auth
+postconf -e smtpd_sasl_security_options=noanonymous
+postconf -e smtpd_recipient_restrictions=permit_sasl_authenticated,reject_unauth_destination
 cat > /etc/dovecot/dovecot.conf <<EOF
 disable_plaintext_auth = yes
 mail_privileged_group = mail
-mail_location = mbox:~/mail:INBOX=/var/mail/%u
 userdb {
   driver = static
   args = uid=500 gid=500 home=/home/%u
@@ -71,13 +82,19 @@ service auth {
 }
 EOF
 
-# config postfix for blackhole
-postconf -e relayhost=
-postconf -e relay_transport=relay
-postconf -e relay_domains=static:ALL
-postconf -e smtpd_end_of_data_restrictions="check_client_access static:discard"
-postconf -e smtp_dns_support_level=disabled
-postconf -e disable_dns_lookups=yes
-postconf -e in_flow_delay=0
-postconf -e smtpd_error_sleep_time=0
-postconf -e smtpd_client_connection_count_limit=0
+## nginx config ########################################################
+cat > /etc/nginx/nginx.conf <<EOF
+user www-data;
+events {
+  worker_connections 1024;
+}
+http {
+  server {
+    listen 80;
+    root /mail;
+    location / {
+      fancyindex on;
+    }
+  }
+}
+EOF
