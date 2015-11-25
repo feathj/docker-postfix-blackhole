@@ -4,10 +4,11 @@ Postfix blackhole docker image.  Useful for for integration testing applications
 
 Features
 ---------
-* Listening service is actual configured instance of postfix which provides accurate testing of application SMTP machinery
+* Listening service is actual configured instance of postfix which facilitates accurate testing of application SMTP machinery
 * TLS support via STARTTLS using a self signed certificate
 * Login support via dovecot for any user, password is `password`
-* Emails are written to exposed `/mail` volume
+* Emails are written to exposed `/mail`
+  * Note that postfix requires non-privileged user to write mail files, so `docker` uid=1000 is used
 * Embedded nginx server with fancyindex enabled for browsing submitted emails
 
 Running

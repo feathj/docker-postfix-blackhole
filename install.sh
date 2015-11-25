@@ -4,7 +4,7 @@
 postconf -F '*/*/chroot = n'
 mkdir -p /mail
 chmod 777 /mail
-echo 'fs_mail unix - n n - - pipe flags=F user=www-data argv=tee /mail/${queue_id}_${recipient}.txt' \
+echo 'fs_mail unix - n n - - pipe flags=F user=docker argv=tee /mail/${queue_id}_${recipient}.txt' \
 >> /etc/postfix/master.cf
 postconf -e default_transport=fs_mail
 postconf -e smtpd_peername_lookup=no
@@ -84,7 +84,7 @@ EOF
 
 ## nginx config ########################################################
 cat > /etc/nginx/nginx.conf <<EOF
-user www-data;
+user docker;
 events {
   worker_connections 1024;
 }

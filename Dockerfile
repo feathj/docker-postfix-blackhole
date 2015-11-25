@@ -14,6 +14,8 @@ COPY install.sh /install.sh
 RUN /install.sh \
   && rm /install.sh
 
+RUN useradd -u 1000 -M docker
+
 CMD /usr/bin/supervisord -c /etc/supervisor/supervisord.conf
 VOLUME /mail
 EXPOSE 25 80
