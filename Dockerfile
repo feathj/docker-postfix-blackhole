@@ -12,10 +12,10 @@ RUN apt-get update \
 # add and run install script
 COPY install.sh /install.sh
 RUN /install.sh \
-  && rm /install.sh
-
-RUN useradd -u 1000 -M docker
+  && rm /install.sh \
+  && useradd -u 1000 -M docker \
+  && chown docker /messages/mail
 
 CMD /usr/bin/supervisord -c /etc/supervisor/supervisord.conf
-VOLUME /mail
+VOLUME /messages/mail
 EXPOSE 25 80
