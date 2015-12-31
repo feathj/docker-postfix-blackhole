@@ -2,9 +2,9 @@
 
 ## Postfix pipe to disk ###############################################
 postconf -F '*/*/chroot = n'
-mkdir -p /mail
-chmod 777 /mail
-echo 'fs_mail unix - n n - - pipe flags=F user=docker argv=tee /mail/${queue_id}_${recipient}.txt' \
+mkdir -p /messages/mail
+chmod 777 /messages/mail
+echo 'fs_mail unix - n n - - pipe flags=F user=docker argv=tee /messages/mail/${queue_id}_${recipient}.txt' \
 >> /etc/postfix/master.cf
 postconf -e default_transport=fs_mail
 postconf -e smtpd_peername_lookup=no
@@ -91,7 +91,7 @@ events {
 http {
   server {
     listen 80;
-    root /mail;
+    root /messages/mail;
     location / {
       fancyindex on;
     }
